@@ -1,36 +1,30 @@
-name: Release
+name: Build and Commit
 
 on:
-  release:
-    types: [published]
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  release:
-    name: Prepare release
+  build:
+    name: Build and commit JS
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-
-      # Build
-      - name: Build the file
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 16
+      - run: npm install
+      - run: npm run build
+      - name: Copy built file to repo root
+        run: cp dist/default-dashboard.js default-dashboard.js
+      - name: Commit and push
         run: |
-          cd $GITHUB_WORKSPACE
-          yarn
-          yarn build
-
-      # Upload build file to the releas as an asset.
-      - name: Upload zip to release
-        uses: svenstaro/upload-release-action@v1-release
-
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: /home/runner/work/default-dashboard/default-dashboard/dist/default-dashboard.js
-          asset_name: default-dashboard.js
-          tag: ${{ github.ref }}
-          overwrite: true
-      - uses: "actions/checkout@v2"
-      - name: HACS Action
-        uses: "hacs/action@main"
-        with:
-          category: "plugin"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add default-dashboard.js
+          git diff --staged --quiet || (git commit -m "build: update default-dashboard.js" && git push)
