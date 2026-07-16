@@ -35,7 +35,8 @@ class DefaultDashboardController {
     const res = await this.hass.callWS({
       type: 'input_select/create',
       name: 'Default Dashboard',
-      options: ['lovelace', ...dashboards, 'refresh'],
+      options: [...new Set(['lovelace', ...dashboards, 'refresh'])],
+
       initial: 'lovelace',
     });
     console.log(res);
